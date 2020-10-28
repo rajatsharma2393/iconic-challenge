@@ -144,6 +144,8 @@ var populateVideoPreviewUrls = function (products) { return __awaiter(void 0, vo
                                 allProducts.push.apply(allProducts, noVideoProducts);
                                 resolve(allProducts);
                             }
+                        }).catch(function (err) {
+                            console.log("Error while fetching video for product : " + videoProducts[i].sku);
                         });
                     };
                     for (i = 0; i < videoProducts.length; i++) {
@@ -188,8 +190,8 @@ var startTask = function () { return __awaiter(void 0, void 0, void 0, function 
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 4, , 5]);
-                pageSize = 2;
+                _a.trys.push([0, 3, , 4]);
+                pageSize = 100;
                 return [4 /*yield*/, makeInitialRequest(pageSize)];
             case 1:
                 response = _a.sent();
@@ -199,23 +201,17 @@ var startTask = function () { return __awaiter(void 0, void 0, void 0, function 
                 });
                 allProducts.push.apply(allProducts, products);
                 console.log("Processed page 1");
-                return [4 /*yield*/, populateAllProducts(allProducts, 2, pageSize)];
-            case 2:
-                _a.sent();
-                console.log(allProducts.length);
-                allProducts[0].sku = "LO569SA80GXF";
-                allProducts[0].video_count = 1;
                 return [4 /*yield*/, populateVideoPreviewUrls(allProducts)];
-            case 3:
+            case 2:
+                // await populateAllProducts(allProducts, response.pageCount, pageSize);
                 allProducts = _a.sent();
-                console.log(allProducts[0]);
                 fs.writeFile('out.json', JSON.stringify(allProducts), 'utf8', function () { });
-                return [3 /*break*/, 5];
-            case 4:
+                return [3 /*break*/, 4];
+            case 3:
                 err_1 = _a.sent();
                 console.log(err_1);
-                return [3 /*break*/, 5];
-            case 5: return [2 /*return*/];
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
         }
     });
 }); };

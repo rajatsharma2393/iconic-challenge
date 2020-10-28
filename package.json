@@ -1,0 +1,28 @@
+{
+  "name": "iconic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@types/es6-promise": "^3.3.0",
+    "@types/node": "^14.14.5",
+    "axios": "^0.21.0",
+    "es6-promise": "^4.2.8",
+    "fs": "0.0.1-security",
+    "typescript": "^4.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajatsharma2393/iconic-challenge.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rajatsharma2393/iconic-challenge/issues"
+  },
+  "homepage": "https://github.com/rajatsharma2393/iconic-challenge#readme"
+}
