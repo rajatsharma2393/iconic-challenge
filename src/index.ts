@@ -1,13 +1,15 @@
 import axios from 'axios';
+import * as fs from 'fs';
 import { Product } from "./model/product";
 import { Response } from "./model/response";
 
 const getProductsApi = async (page: number, pageSize: number): Promise<any> => {
-    try {
-        return await axios.get(`https://eve.theiconic.com.au/catalog/products?gender=female&page=${page}&page_size=${pageSize}&sort=popularity`)
-    } catch (error) {
-        throw error;
-    }
+    return await axios.get(`https://eve.theiconic.com.au/catalog/products?gender=female&page=${page}&page_size=${pageSize}&sort=popularity`)
+
+}
+
+const getVideoPreviewUrl = async (sku: string): Promise<any> => {
+    return await axios.get(`https://eve.theiconic.com.au/catalog/products/${sku}/videos`)
 }
 
 const makeInitialRequest = async (pageSize: number): Promise<Response> => {
@@ -31,20 +33,96 @@ const makeInitialRequest = async (pageSize: number): Promise<Response> => {
 
 }
 
-const makeNextRequests = async (): Promise<Product[]> => {
-    // We have already made request for page 1
-    return null;
+const makeNextRequests = async (page: number, pageSize: number): Promise<Product[]> => {
+    const products = await getProductsApi(page, pageSize);
+    if (products && products.data && products.data._embedded && products.data._embedded.product) {
+        return products.data._embedded.product;
+    } else {
+        throw new Error("Error fetching initial products details");
+    }
 }
 
+const populateVideoPreviewUrls = async (products: Array<Product>): Promise<Array<Product>> => {
+
+    // We dont need to process products that have zero video counts
+    let noVideoProducts: Array<Product> = products.filter(product => {
+        return product.video_count == 0;
+    })
+    let videoProducts: Array<Product> = products.filter(product => {
+        return product.video_count != 0;
+    })
+    let allProducts = Array<Product>();
+
+    return new Promise(async (resolve, reject) => {
+        let processedCount = 0;
+        for (let i = 0; i < videoProducts.length; i++) {
+            getVideoPreviewUrl(videoProducts[i].sku).then(resp => {
+                processedCount++;
+                if (resp && resp.data && resp.data._embedded && resp.data._embedded.videos_url) {
+                    videoProducts[i].video_urls = resp.data._embedded.videos_url.map((url: any) => {
+                        return url.url;
+                    });
+                }
+                if (processedCount == videoProducts.length) {
+                    allProducts.push(...videoProducts);
+                    allProducts.push(...noVideoProducts);
+                    resolve(allProducts);
+                }
+            }).catch(err => {
+                console.log("Error while fetching video for product : " + videoProducts[i].sku);
+            });
+
+        }
+    });
+
+}
+
+const populateAllProducts = async (allProducts: Array<Product>, pageCount: number, pageSize: number) => {
+    let processedCount = 1;
+    return new Promise((resolve, reject) => {
+        // We have already made request for page 1
+
+        for (let i = 2; i <= pageCount; i++) {
+
+            //Can use Promise.all here but if 1 api fails, other ones will not proceed
+
+            makeNextRequests(i, pageSize).then((products) => {
+                //  To avoid unnecessary properties
+                products = products.map((product: Product) => {
+                    return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
+                });
+                processedCount++;
+
+                console.log(`Processed page ${i}`)
+                allProducts.push(...products);
+                if (processedCount == pageCount) {
+                    resolve(processedCount);
+                }
+
+            }).catch(err => {
+                console.log("Error fetching page :" + i);
+            });
+        }
+    })
+
+}
 const startTask = async (): Promise<void> => {
     try {
         let pageSize: number = 100;
         let response: Response = await makeInitialRequest(pageSize);
         let allProducts = Array<Product>();
-        allProducts.push(...response.products);
-        for (let i = 2; i <= response.pageCount; i++) {
+        // To avoid unnecessary properties
+        let products: Array<Product> = response.products.map((product: Product) => {
+            return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
+        })
+        allProducts.push(...products);
 
-        }
+        console.log("Processed page 1")
+        // await populateAllProducts(allProducts, response.pageCount, pageSize);
+
+        allProducts = await populateVideoPreviewUrls(allProducts);
+        fs.writeFile('out.json', JSON.stringify(allProducts), 'utf8', () => { });
+
 
     } catch (err) {
         console.log(err);
@@ -52,4 +130,5 @@ const startTask = async (): Promise<void> => {
 }
 
 startTask();
+
 

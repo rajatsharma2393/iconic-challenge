@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -40,18 +59,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var axios_1 = __importDefault(require("axios"));
+var fs = __importStar(require("fs"));
 var getProductsApi = function (page, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
-    var error_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
-                _a.trys.push([0, 2, , 3]);
-                return [4 /*yield*/, axios_1.default.get("https://eve.theiconic.com.au/catalog/products?gender=female&page=" + page + "&page_size=" + pageSize + "&sort=popularity")];
+            case 0: return [4 /*yield*/, axios_1.default.get("https://eve.theiconic.com.au/catalog/products?gender=female&page=" + page + "&page_size=" + pageSize + "&sort=popularity")];
             case 1: return [2 /*return*/, _a.sent()];
-            case 2:
-                error_1 = _a.sent();
-                throw error_1;
-            case 3: return [2 /*return*/];
+        }
+    });
+}); };
+var getVideoPreviewUrl = function (sku) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, axios_1.default.get("https://eve.theiconic.com.au/catalog/products/" + sku + "/videos")];
+            case 1: return [2 /*return*/, _a.sent()];
         }
     });
 }); };
@@ -79,34 +100,122 @@ var makeInitialRequest = function (pageSize) { return __awaiter(void 0, void 0, 
         }
     });
 }); };
-var makeNextRequests = function (totalPageCount) { return __awaiter(void 0, void 0, void 0, function () {
-    var i;
+var makeNextRequests = function (page, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
+    var products;
     return __generator(this, function (_a) {
-        // We have already made request for page 1
-        for (i = 2; i <= totalPageCount; i++) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, getProductsApi(page, pageSize)];
+            case 1:
+                products = _a.sent();
+                if (products && products.data && products.data._embedded && products.data._embedded.product) {
+                    return [2 /*return*/, products.data._embedded.product];
+                }
+                else {
+                    throw new Error("Error fetching initial products details");
+                }
+                return [2 /*return*/];
         }
-        return [2 /*return*/];
+    });
+}); };
+var populateVideoPreviewUrls = function (products) { return __awaiter(void 0, void 0, void 0, function () {
+    var noVideoProducts, videoProducts, allProducts;
+    return __generator(this, function (_a) {
+        noVideoProducts = products.filter(function (product) {
+            return product.video_count == 0;
+        });
+        videoProducts = products.filter(function (product) {
+            return product.video_count != 0;
+        });
+        allProducts = Array();
+        return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(void 0, void 0, void 0, function () {
+                var processedCount, _loop_1, i;
+                return __generator(this, function (_a) {
+                    processedCount = 0;
+                    _loop_1 = function (i) {
+                        getVideoPreviewUrl(videoProducts[i].sku).then(function (resp) {
+                            processedCount++;
+                            if (resp && resp.data && resp.data._embedded && resp.data._embedded.videos_url) {
+                                videoProducts[i].video_urls = resp.data._embedded.videos_url.map(function (url) {
+                                    return url.url;
+                                });
+                            }
+                            if (processedCount == videoProducts.length) {
+                                allProducts.push.apply(allProducts, videoProducts);
+                                allProducts.push.apply(allProducts, noVideoProducts);
+                                resolve(allProducts);
+                            }
+                        });
+                    };
+                    for (i = 0; i < videoProducts.length; i++) {
+                        _loop_1(i);
+                    }
+                    return [2 /*return*/];
+                });
+            }); })];
+    });
+}); };
+var populateAllProducts = function (allProducts, pageCount, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
+    var processedCount;
+    return __generator(this, function (_a) {
+        processedCount = 1;
+        return [2 /*return*/, new Promise(function (resolve, reject) {
+                // We have already made request for page 1
+                var _loop_2 = function (i) {
+                    //Can use Promise.all here but if 1 api fails, other ones will not proceed
+                    makeNextRequests(i, pageSize).then(function (products) {
+                        //  To avoid unnecessary properties
+                        products = products.map(function (product) {
+                            return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
+                        });
+                        processedCount++;
+                        console.log("Processed page " + i);
+                        allProducts.push.apply(allProducts, products);
+                        if (processedCount == pageCount) {
+                            resolve(processedCount);
+                        }
+                    }).catch(function (err) {
+                        console.log("Error fetching page :" + i);
+                    });
+                };
+                for (var i = 2; i <= pageCount; i++) {
+                    _loop_2(i);
+                }
+            })];
     });
 }); };
 var startTask = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var pageSize, response, allProducts, err_1;
+    var pageSize, response, allProducts, products, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 2, , 3]);
-                pageSize = 100;
+                _a.trys.push([0, 4, , 5]);
+                pageSize = 2;
                 return [4 /*yield*/, makeInitialRequest(pageSize)];
             case 1:
                 response = _a.sent();
                 allProducts = Array();
-                allProducts.push.apply(allProducts, response.products);
-                console.log(allProducts.length);
-                return [3 /*break*/, 3];
+                products = response.products.map(function (product) {
+                    return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
+                });
+                allProducts.push.apply(allProducts, products);
+                console.log("Processed page 1");
+                return [4 /*yield*/, populateAllProducts(allProducts, 2, pageSize)];
             case 2:
+                _a.sent();
+                console.log(allProducts.length);
+                allProducts[0].sku = "LO569SA80GXF";
+                allProducts[0].video_count = 1;
+                return [4 /*yield*/, populateVideoPreviewUrls(allProducts)];
+            case 3:
+                allProducts = _a.sent();
+                console.log(allProducts[0]);
+                fs.writeFile('out.json', JSON.stringify(allProducts), 'utf8', function () { });
+                return [3 /*break*/, 5];
+            case 4:
                 err_1 = _a.sent();
                 console.log(err_1);
-                return [3 /*break*/, 3];
-            case 3: return [2 /*return*/];
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
         }
     });
 }); };
