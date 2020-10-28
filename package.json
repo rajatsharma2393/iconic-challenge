@@ -5,15 +5,19 @@
   "main": "index.js",
   "dependencies": {
     "@types/es6-promise": "^3.3.0",
-    "@types/node": "^14.14.5",
     "axios": "^0.21.0",
     "es6-promise": "^4.2.8",
     "fs": "0.0.1-security",
     "typescript": "^4.0.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.6",
+    "jest": "^26.6.1",
+    "ts-jest": "^26.4.3"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",

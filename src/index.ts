@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as fs from 'fs';
+import * as fs from "fs";
 import { Product } from "./model/product";
 import { Response } from "./model/response";
 
@@ -33,7 +33,7 @@ const makeInitialRequest = async (pageSize: number): Promise<Response> => {
 
 }
 
-const makeNextRequests = async (page: number, pageSize: number): Promise<Product[]> => {
+const makeNextPageRequests = async (page: number, pageSize: number): Promise<Product[]> => {
     const products = await getProductsApi(page, pageSize);
     if (products && products.data && products.data._embedded && products.data._embedded.product) {
         return products.data._embedded.product;
@@ -59,7 +59,7 @@ const populateAllProducts = async (allProducts: Array<Product>, pageNo: number, 
     //Can use Promise.all here but if 1 api fails, other ones will not proceed
     // Also Gateway not handling concurrent requests in short span of time
 
-    let products: Array<Product> = await makeNextRequests(pageNo, pageSize);
+    let products: Array<Product> = await makeNextPageRequests(pageNo, pageSize);
     //  To avoid unnecessary properties
     products = products.map((product: Product) => {
         return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
@@ -125,4 +125,17 @@ const startTask = async (): Promise<void> => {
 
 startTask();
 
+function add(a: number, b: number) {
+    return a + b;
+}
 
+export {
+    getProductsApi,
+    getVideoPreviewUrl,
+    makeInitialRequest,
+    makeNextPageRequests,
+    populateVideoPreviewUrls,
+    populateAllProducts,
+    startTask,
+    add
+}

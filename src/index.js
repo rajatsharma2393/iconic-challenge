@@ -65,6 +65,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.add = exports.startTask = exports.populateAllProducts = exports.populateVideoPreviewUrls = exports.makeNextPageRequests = exports.makeInitialRequest = exports.getVideoPreviewUrl = exports.getProductsApi = void 0;
 var axios_1 = __importDefault(require("axios"));
 var fs = __importStar(require("fs"));
 var getProductsApi = function (page, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
@@ -75,6 +76,7 @@ var getProductsApi = function (page, pageSize) { return __awaiter(void 0, void 0
         }
     });
 }); };
+exports.getProductsApi = getProductsApi;
 var getVideoPreviewUrl = function (sku) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -83,6 +85,7 @@ var getVideoPreviewUrl = function (sku) { return __awaiter(void 0, void 0, void 
         }
     });
 }); };
+exports.getVideoPreviewUrl = getVideoPreviewUrl;
 var makeInitialRequest = function (pageSize) { return __awaiter(void 0, void 0, void 0, function () {
     var products, resp;
     return __generator(this, function (_a) {
@@ -107,7 +110,8 @@ var makeInitialRequest = function (pageSize) { return __awaiter(void 0, void 0, 
         }
     });
 }); };
-var makeNextRequests = function (page, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
+exports.makeInitialRequest = makeInitialRequest;
+var makeNextPageRequests = function (page, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
     var products;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -124,6 +128,7 @@ var makeNextRequests = function (page, pageSize) { return __awaiter(void 0, void
         }
     });
 }); };
+exports.makeNextPageRequests = makeNextPageRequests;
 var populateVideoPreviewUrls = function (videoProduct) { return __awaiter(void 0, void 0, void 0, function () {
     var resp;
     return __generator(this, function (_a) {
@@ -140,11 +145,12 @@ var populateVideoPreviewUrls = function (videoProduct) { return __awaiter(void 0
         }
     });
 }); };
+exports.populateVideoPreviewUrls = populateVideoPreviewUrls;
 var populateAllProducts = function (allProducts, pageNo, pageSize) { return __awaiter(void 0, void 0, void 0, function () {
     var products;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, makeNextRequests(pageNo, pageSize)];
+            case 0: return [4 /*yield*/, makeNextPageRequests(pageNo, pageSize)];
             case 1:
                 products = _a.sent();
                 //  To avoid unnecessary properties
@@ -156,13 +162,14 @@ var populateAllProducts = function (allProducts, pageNo, pageSize) { return __aw
         }
     });
 }); };
+exports.populateAllProducts = populateAllProducts;
 var startTask = function () { return __awaiter(void 0, void 0, void 0, function () {
     var pageSize, response, allProducts, products, noVideoProducts, videoProducts, i, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 _a.trys.push([0, 6, , 7]);
-                pageSize = 10;
+                pageSize = 100;
                 return [4 /*yield*/, makeInitialRequest(pageSize)];
             case 1:
                 response = _a.sent();
@@ -172,33 +179,20 @@ var startTask = function () { return __awaiter(void 0, void 0, void 0, function 
                 });
                 allProducts.push.apply(allProducts, products);
                 console.log("Processed page 1");
-                // Uncomment next for loop if still commented
-                // for (let i = 2; i <= response.pageCount; i++) {
-                //     try {
-                //      //   Have to process this 1 by 1 otherwise gateway giving timeout error
-                //         await populateAllProducts(allProducts, i, pageSize);
-                //         console.log(`Processed page ${i}`)
-                //     } catch (err) {
-                //         console.log("Error in processing page: " + i);
-                //     }
-                // }
-                // For testing to check video url working
-                allProducts[0].sku = "LO569SA80GXF";
-                allProducts[0].video_count = 1;
                 noVideoProducts = allProducts.filter(function (product) {
                     return product.video_count == 0;
                 });
                 videoProducts = allProducts.filter(function (product) {
                     return product.video_count != 0;
                 });
-                console.log(noVideoProducts.length);
-                console.log(videoProducts.length);
                 i = 0;
                 _a.label = 2;
             case 2:
                 if (!(i < videoProducts.length)) return [3 /*break*/, 5];
+                // Need to fetch this as well 1 by 1
                 return [4 /*yield*/, populateVideoPreviewUrls(videoProducts[i])];
             case 3:
+                // Need to fetch this as well 1 by 1
                 _a.sent();
                 _a.label = 4;
             case 4:
@@ -215,4 +209,9 @@ var startTask = function () { return __awaiter(void 0, void 0, void 0, function 
         }
     });
 }); };
+exports.startTask = startTask;
 startTask();
+function add(a, b) {
+    return a + b;
+}
+exports.add = add;
