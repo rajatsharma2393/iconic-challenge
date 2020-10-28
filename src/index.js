@@ -54,6 +54,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -117,16 +124,8 @@ var makeNextRequests = function (page, pageSize) { return __awaiter(void 0, void
         }
     });
 }); };
-var populateVideoPreviewUrls = function (products) { return __awaiter(void 0, void 0, void 0, function () {
-    var noVideoProducts, videoProducts, allProducts;
+var populateVideoPreviewUrls = function (videoProducts) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
-        noVideoProducts = products.filter(function (product) {
-            return product.video_count == 0;
-        });
-        videoProducts = products.filter(function (product) {
-            return product.video_count != 0;
-        });
-        allProducts = Array();
         return [2 /*return*/, new Promise(function (resolve, reject) { return __awaiter(void 0, void 0, void 0, function () {
                 var processedCount, _loop_1, i;
                 return __generator(this, function (_a) {
@@ -140,12 +139,14 @@ var populateVideoPreviewUrls = function (products) { return __awaiter(void 0, vo
                                 });
                             }
                             if (processedCount == videoProducts.length) {
-                                allProducts.push.apply(allProducts, videoProducts);
-                                allProducts.push.apply(allProducts, noVideoProducts);
-                                resolve(allProducts);
+                                resolve(videoProducts);
                             }
                         }).catch(function (err) {
                             console.log("Error while fetching video for product : " + videoProducts[i].sku);
+                            processedCount++;
+                            if (processedCount == videoProducts.length) {
+                                resolve(videoProducts);
+                            }
                         });
                     };
                     for (i = 0; i < videoProducts.length; i++) {
@@ -176,7 +177,11 @@ var populateAllProducts = function (allProducts, pageCount, pageSize) { return _
                             resolve(processedCount);
                         }
                     }).catch(function (err) {
+                        processedCount++;
                         console.log("Error fetching page :" + i);
+                        if (processedCount == pageCount) {
+                            resolve(processedCount);
+                        }
                     });
                 };
                 for (var i = 2; i <= pageCount; i++) {
@@ -186,12 +191,12 @@ var populateAllProducts = function (allProducts, pageCount, pageSize) { return _
     });
 }); };
 var startTask = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var pageSize, response, allProducts, products, err_1;
+    var pageSize, response, allProducts, products, noVideoProducts, videoProducts, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 3, , 4]);
-                pageSize = 100;
+                _a.trys.push([0, 4, , 5]);
+                pageSize = 10;
                 return [4 /*yield*/, makeInitialRequest(pageSize)];
             case 1:
                 response = _a.sent();
@@ -201,17 +206,25 @@ var startTask = function () { return __awaiter(void 0, void 0, void 0, function 
                 });
                 allProducts.push.apply(allProducts, products);
                 console.log("Processed page 1");
-                return [4 /*yield*/, populateVideoPreviewUrls(allProducts)];
+                noVideoProducts = products.filter(function (product) {
+                    return product.video_count == 0;
+                });
+                videoProducts = products.filter(function (product) {
+                    return product.video_count != 0;
+                });
+                if (!(videoProducts.length > 0)) return [3 /*break*/, 3];
+                return [4 /*yield*/, populateVideoPreviewUrls(videoProducts)];
             case 2:
-                // await populateAllProducts(allProducts, response.pageCount, pageSize);
-                allProducts = _a.sent();
-                fs.writeFile('out.json', JSON.stringify(allProducts), 'utf8', function () { });
-                return [3 /*break*/, 4];
+                videoProducts = _a.sent();
+                _a.label = 3;
             case 3:
+                fs.writeFile('out.json', JSON.stringify(__spreadArrays(videoProducts, noVideoProducts)), 'utf8', function () { });
+                return [3 /*break*/, 5];
+            case 4:
                 err_1 = _a.sent();
                 console.log(err_1);
-                return [3 /*break*/, 4];
-            case 4: return [2 /*return*/];
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
         }
     });
 }); };

@@ -42,16 +42,7 @@ const makeNextRequests = async (page: number, pageSize: number): Promise<Product
     }
 }
 
-const populateVideoPreviewUrls = async (products: Array<Product>): Promise<Array<Product>> => {
-
-    // We dont need to process products that have zero video counts
-    let noVideoProducts: Array<Product> = products.filter(product => {
-        return product.video_count == 0;
-    })
-    let videoProducts: Array<Product> = products.filter(product => {
-        return product.video_count != 0;
-    })
-    let allProducts = Array<Product>();
+const populateVideoPreviewUrls = async (videoProducts: Array<Product>): Promise<Array<Product>> => {
 
     return new Promise(async (resolve, reject) => {
         let processedCount = 0;
@@ -64,12 +55,15 @@ const populateVideoPreviewUrls = async (products: Array<Product>): Promise<Array
                     });
                 }
                 if (processedCount == videoProducts.length) {
-                    allProducts.push(...videoProducts);
-                    allProducts.push(...noVideoProducts);
-                    resolve(allProducts);
+                    resolve(videoProducts);
                 }
             }).catch(err => {
+
                 console.log("Error while fetching video for product : " + videoProducts[i].sku);
+                processedCount++;
+                if (processedCount == videoProducts.length) {
+                    resolve(videoProducts);
+                }
             });
 
         }
@@ -100,15 +94,20 @@ const populateAllProducts = async (allProducts: Array<Product>, pageCount: numbe
                 }
 
             }).catch(err => {
+                processedCount++;
                 console.log("Error fetching page :" + i);
+                if (processedCount == pageCount) {
+                    resolve(processedCount);
+                }
             });
         }
     })
 
 }
+
 const startTask = async (): Promise<void> => {
     try {
-        let pageSize: number = 100;
+        let pageSize: number = 10;
         let response: Response = await makeInitialRequest(pageSize);
         let allProducts = Array<Product>();
         // To avoid unnecessary properties
@@ -118,10 +117,28 @@ const startTask = async (): Promise<void> => {
         allProducts.push(...products);
 
         console.log("Processed page 1")
-        // await populateAllProducts(allProducts, response.pageCount, pageSize);
 
-        allProducts = await populateVideoPreviewUrls(allProducts);
-        fs.writeFile('out.json', JSON.stringify(allProducts), 'utf8', () => { });
+        // Uncomment next line if still commented
+        await populateAllProducts(allProducts, response.pageCount, pageSize);
+
+        // For testing
+        // allProducts[0].sku = "LO569SA80GXF";
+        // allProducts[0].video_count = 1;
+
+
+        // We dont need to process products that have zero video counts
+        let noVideoProducts: Array<Product> = products.filter(product => {
+            return product.video_count == 0;
+        })
+        let videoProducts: Array<Product> = products.filter(product => {
+            return product.video_count != 0;
+        })
+
+        if (videoProducts.length > 0) {
+            videoProducts = await populateVideoPreviewUrls(videoProducts);
+        }
+
+        fs.writeFile('out.json', JSON.stringify([...videoProducts, ...noVideoProducts]), 'utf8', () => { });
 
 
     } catch (err) {
