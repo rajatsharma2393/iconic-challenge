@@ -42,72 +42,36 @@ const makeNextRequests = async (page: number, pageSize: number): Promise<Product
     }
 }
 
-const populateVideoPreviewUrls = async (videoProducts: Array<Product>): Promise<Array<Product>> => {
+const populateVideoPreviewUrls = async (videoProduct: Product) => {
 
-    return new Promise(async (resolve, reject) => {
-        let processedCount = 0;
-        for (let i = 0; i < videoProducts.length; i++) {
-            getVideoPreviewUrl(videoProducts[i].sku).then(resp => {
-                processedCount++;
-                if (resp && resp.data && resp.data._embedded && resp.data._embedded.videos_url) {
-                    videoProducts[i].video_urls = resp.data._embedded.videos_url.map((url: any) => {
-                        return url.url;
-                    });
-                }
-                if (processedCount == videoProducts.length) {
-                    resolve(videoProducts);
-                }
-            }).catch(err => {
+    let resp = await getVideoPreviewUrl(videoProduct.sku);
+    if (resp && resp.data && resp.data._embedded && resp.data._embedded.videos_url) {
+        videoProduct.video_urls = resp.data._embedded.videos_url.map((url: any) => {
+            return url.url;
+        });
+    }
 
-                console.log("Error while fetching video for product : " + videoProducts[i].sku);
-                processedCount++;
-                if (processedCount == videoProducts.length) {
-                    resolve(videoProducts);
-                }
-            });
+}
 
-        }
+
+
+const populateAllProducts = async (allProducts: Array<Product>, pageNo: number, pageSize: number) => {
+    //Can use Promise.all here but if 1 api fails, other ones will not proceed
+    // Also Gateway not handling concurrent requests in short span of time
+
+    let products: Array<Product> = await makeNextRequests(pageNo, pageSize);
+    //  To avoid unnecessary properties
+    products = products.map((product: Product) => {
+        return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
     });
-
+    allProducts.push(...products);
 }
 
-const populateAllProducts = async (allProducts: Array<Product>, pageCount: number, pageSize: number) => {
-    let processedCount = 1;
-    return new Promise((resolve, reject) => {
-        // We have already made request for page 1
 
-        for (let i = 2; i <= pageCount; i++) {
-
-            //Can use Promise.all here but if 1 api fails, other ones will not proceed
-
-            makeNextRequests(i, pageSize).then((products) => {
-                //  To avoid unnecessary properties
-                products = products.map((product: Product) => {
-                    return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
-                });
-                processedCount++;
-
-                console.log(`Processed page ${i}`)
-                allProducts.push(...products);
-                if (processedCount == pageCount) {
-                    resolve(processedCount);
-                }
-
-            }).catch(err => {
-                processedCount++;
-                console.log("Error fetching page :" + i);
-                if (processedCount == pageCount) {
-                    resolve(processedCount);
-                }
-            });
-        }
-    })
-
-}
 
 const startTask = async (): Promise<void> => {
     try {
-        let pageSize: number = 10;
+        let pageSize: number = 100;
         let response: Response = await makeInitialRequest(pageSize);
         let allProducts = Array<Product>();
         // To avoid unnecessary properties
@@ -118,25 +82,38 @@ const startTask = async (): Promise<void> => {
 
         console.log("Processed page 1")
 
-        // Uncomment next line if still commented
-        await populateAllProducts(allProducts, response.pageCount, pageSize);
+        // Uncomment next for loop if still commented
+        // for (let i = 2; i <= response.pageCount; i++) {
+        //     try {
+        //      //   Have to process this 1 by 1 otherwise gateway giving timeout error
+        //         await populateAllProducts(allProducts, i, pageSize);
+        //         console.log(`Processed page ${i}`)
+        //     } catch (err) {
+        //         console.log("Error in processing page: " + i);
+        //     }
 
-        // For testing
+        // }
+
+
+        // For testing to check video url working
         // allProducts[0].sku = "LO569SA80GXF";
         // allProducts[0].video_count = 1;
 
 
         // We dont need to process products that have zero video counts
-        let noVideoProducts: Array<Product> = products.filter(product => {
+        let noVideoProducts: Array<Product> = allProducts.filter(product => {
             return product.video_count == 0;
         })
-        let videoProducts: Array<Product> = products.filter(product => {
+        let videoProducts: Array<Product> = allProducts.filter(product => {
             return product.video_count != 0;
         })
 
-        if (videoProducts.length > 0) {
-            videoProducts = await populateVideoPreviewUrls(videoProducts);
+        for (let i = 0; i < videoProducts.length; i++) {
+            // Need to fetch this as well 1 by 1
+            await populateVideoPreviewUrls(videoProducts[i]);
         }
+
+
 
         fs.writeFile('out.json', JSON.stringify([...videoProducts, ...noVideoProducts]), 'utf8', () => { });
 
