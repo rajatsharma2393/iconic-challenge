@@ -11,12 +11,12 @@ import { Response } from "./../model/response";
 import { mocked } from 'ts-jest/utils'
 // jest.mock("./../services/product");
 import {
-    getProductsApi,
+    getProductsDetails,
     getVideoPreviewUrl
 } from './../services/product';
 
 jest.mock('./../services/product', () => ({
-    getProductsApi: jest.fn(),
+    getProductsDetails: jest.fn(),
     getVideoPreviewUrl: jest.fn()
 }));
 
@@ -72,7 +72,7 @@ const validProductVideoApiData = {
 }
 
 test('Test makeInitialRequest with valid data', () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
 
     makeInitialRequest(2).then(result => {
         expect(result).toBeTruthy();
@@ -85,7 +85,7 @@ test('Test makeInitialRequest with valid data', () => {
 })
 
 test('Test makeInitialRequest with invalid data(No Page count)', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: {} }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: {} }));
 
 
     await expect(makeInitialRequest(2))
@@ -94,7 +94,7 @@ test('Test makeInitialRequest with invalid data(No Page count)', async () => {
 })
 
 test('Test makeInitialRequest with invalid data(No products)', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: { page_count: 2 } }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: { page_count: 2 } }));
 
 
     await expect(makeInitialRequest(2))
@@ -105,7 +105,7 @@ test('Test makeInitialRequest with invalid data(No products)', async () => {
 
 
 test('Test makeNextPageRequests with valid data', () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
 
     makeNextPageRequests(1, 2).then(products => {
         expect(products).toBeTruthy();
@@ -118,7 +118,7 @@ test('Test makeNextPageRequests with valid data', () => {
 
 
 test('Test makeInitialRequest with invalid data(No products)', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: {} }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: {} }));
 
 
     await expect(makeNextPageRequests(1, 2))
@@ -156,7 +156,7 @@ test('Test populateVideoPreviewUrls with no urls data', async () => {
 
 
 test('Test populateNextProducts adding new products data', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
 
     let allProducts: Array<Product> = [{ name: "A", sku: "a", video_count: 1, video_urls: [] }];
 
@@ -169,7 +169,7 @@ test('Test populateNextProducts adding new products data', async () => {
 })
 
 test('Test populateNextProducts adding no new products data', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve([]));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve([]));
 
     let allProducts: Array<Product> = [{ name: "A", sku: "a", video_count: 1, video_urls: [] }];
     await expect(populateNextProducts(allProducts, 1, 1))
@@ -180,7 +180,7 @@ test('Test populateNextProducts adding no new products data', async () => {
 
 
 test('Test fetchDetails adding valid products with 1 page count', async () => {
-    mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: { ...validProductApiData, "page_count": 1 } }));
+    mocked(getProductsDetails).mockReturnValueOnce(Promise.resolve({ data: { ...validProductApiData, "page_count": 1 } }));
 
     fetchDetails().then(result => {
         expect(result).toBeTruthy();
@@ -191,7 +191,7 @@ test('Test fetchDetails adding valid products with 1 page count', async () => {
 })
 
 test('Test fetchDetails adding valid products with 2 page count', async () => {
-    mocked(getProductsApi).mockReturnValue(Promise.resolve({ data: validProductApiData }));
+    mocked(getProductsDetails).mockReturnValue(Promise.resolve({ data: validProductApiData }));
 
     fetchDetails().then(result => {
         expect(result).toBeTruthy();

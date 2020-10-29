@@ -1,11 +1,11 @@
 
 import { Product } from "./model/product";
 import { Response } from "./model/response";
-import { getProductsApi, getVideoPreviewUrl } from "./services/product";
+import { getProductsDetails, getVideoPreviewUrl } from "./services/product";
 
 // First requests that fetch first set of products as well as total page count
 const makeInitialRequest = async (pageSize: number): Promise<Response> => {
-    const products = await getProductsApi(1, pageSize);
+    const products = await getProductsDetails(1, pageSize);
     let resp = <Response>{};
 
     if (products && products.data) {
@@ -27,7 +27,7 @@ const makeInitialRequest = async (pageSize: number): Promise<Response> => {
 
 // Next set of requests that only fetches details of products
 const makeNextPageRequests = async (page: number, pageSize: number): Promise<Product[]> => {
-    const products = await getProductsApi(page, pageSize);
+    const products = await getProductsDetails(page, pageSize);
     if (products && products.data && products.data._embedded && products.data._embedded.product) {
         return products.data._embedded.product;
     } else {
