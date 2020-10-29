@@ -1,6 +1,6 @@
 import {
-    makeInitialRequest,
-    makeNextPageRequests,
+    getInitialProductData,
+    getNextPageProductsData,
     populateVideoPreviewUrls,
 } from "./../../services/product";
 
@@ -61,10 +61,10 @@ const validProductVideoApiData = {
     "page": 1
 }
 
-test('Test makeInitialRequest with valid data', () => {
+test('Test getInitialProductData with valid data', () => {
     (mockedAxios.get as any).mockResolvedValue(Promise.resolve({ data: validProductApiData }));
- 
-    makeInitialRequest(2).then(result => {
+
+    getInitialProductData(2).then(result => {
         expect(result).toBeTruthy();
         expect(result).toHaveProperty('pageCount', 2);
         expect(result).toHaveProperty('products');
@@ -74,30 +74,30 @@ test('Test makeInitialRequest with valid data', () => {
     })
 })
 
-test('Test makeInitialRequest with invalid data(No Page count)', async () => {
+test('Test getInitialProductData with invalid data(No Page count)', async () => {
     (mockedAxios.get as any).mockResolvedValue(Promise.resolve({ data: {} }));
 
 
-    await expect(makeInitialRequest(2))
+    await expect(getInitialProductData(2))
         .rejects
         .toThrow(Error);
 })
 
-test('Test makeInitialRequest with invalid data(No products)', async () => {
+test('Test getInitialProductData with invalid data(No products)', async () => {
     (mockedAxios.get as any).mockResolvedValue(Promise.resolve({ data: { page_count: 2 } }));
 
 
-    await expect(makeInitialRequest(2))
+    await expect(getInitialProductData(2))
         .rejects
         .toThrow(Error);
 })
 
 
 
-test('Test makeNextPageRequests with valid data', () => {
+test('Test getNextPageProductsData with valid data', () => {
     (mockedAxios.get as any).mockResolvedValue(Promise.resolve({ data: validProductApiData }));
 
-    makeNextPageRequests(1, 2).then(products => {
+    getNextPageProductsData(1, 2).then(products => {
         expect(products).toBeTruthy();
         expect(products).toHaveLength(2);
     }).catch(err => {
@@ -107,11 +107,11 @@ test('Test makeNextPageRequests with valid data', () => {
 
 
 
-test('Test makeInitialRequest with invalid data(No products)', async () => {
+test('Test getInitialProductData with invalid data(No products)', async () => {
     (mockedAxios.get as any).mockResolvedValue(Promise.resolve({ data: {} }));
 
 
-    await expect(makeNextPageRequests(1, 2))
+    await expect(getNextPageProductsData(1, 2))
         .rejects
         .toThrow(Error);
 })

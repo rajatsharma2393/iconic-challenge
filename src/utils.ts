@@ -2,8 +2,8 @@
 import { Product } from "./model/product";
 import { Response } from "./model/response";
 import {
-    makeInitialRequest,
-    makeNextPageRequests,
+    getInitialProductData,
+    getNextPageProductsData,
     populateVideoPreviewUrls
 } from "./services/product";
 
@@ -13,7 +13,7 @@ const populateNextProducts = async (allProducts: Array<Product>, pageNo: number,
     //Can use Promise.all here but if 1 api fails, other ones will not proceed
     // Also Gateway not handling concurrent requests in short span of time
 
-    let products: Array<Product> = await makeNextPageRequests(pageNo, pageSize);
+    let products: Array<Product> = await getNextPageProductsData(pageNo, pageSize);
     //  To avoid unnecessary properties
     products = products.map((product: Product) => {
         return { name: product.name, sku: product.sku, video_count: product.video_count, video_urls: [] };
@@ -25,7 +25,7 @@ const populateNextProducts = async (allProducts: Array<Product>, pageNo: number,
 const fetchDetails = async (): Promise<Array<Product>> => {
     try {
         let pageSize: number = 100;
-        let response: Response = await makeInitialRequest(pageSize);
+        let response: Response = await getInitialProductData(pageSize);
         let allProducts = Array<Product>();
         // To avoid unnecessary properties
         let products: Array<Product> = response.products.map((product: Product) => {

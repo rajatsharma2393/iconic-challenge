@@ -17,7 +17,7 @@ const getVideoPreviewUrl = async (sku: string): Promise<any> => {
 
 
 // First requests that fetch first set of products as well as total page count
-const makeInitialRequest = async (pageSize: number): Promise<Response> => {
+const getInitialProductData = async (pageSize: number): Promise<Response> => {
     const products = await getProductsDetails(1, pageSize);
     let resp = <Response>{};
 
@@ -39,7 +39,7 @@ const makeInitialRequest = async (pageSize: number): Promise<Response> => {
 }
 
 // Next set of requests that only fetches details of products
-const makeNextPageRequests = async (page: number, pageSize: number): Promise<Product[]> => {
+const getNextPageProductsData = async (page: number, pageSize: number): Promise<Product[]> => {
     const products = await getProductsDetails(page, pageSize);
     if (products && products.data && products.data._embedded && products.data._embedded.product) {
         return products.data._embedded.product;
@@ -63,7 +63,7 @@ const populateVideoPreviewUrls = async (videoProduct: Product) => {
 export {
     getProductsDetails,
     getVideoPreviewUrl,
-    makeInitialRequest,
-    makeNextPageRequests,
+    getInitialProductData,
+    getNextPageProductsData,
     populateVideoPreviewUrls
 }
