@@ -190,7 +190,7 @@ test('Test fetchDetails adding valid products with 1 page count', async () => {
     })
 })
 
-test('Test fetchDetails adding valid products', async () => {
+test('Test fetchDetails adding valid products with 2 page count', async () => {
     mocked(getProductsApi).mockReturnValue(Promise.resolve({ data: validProductApiData }));
 
     fetchDetails().then(result => {
