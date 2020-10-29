@@ -5,7 +5,9 @@ import { fetchDetails } from "./utils";
 
 const startTask = async () => {
     let products: Array<Product> = await fetchDetails();
-    fs.writeFile('out.json', JSON.stringify(products), 'utf8', () => { });
+    if (products && products.length > 0) {
+        fs.writeFile('out.json', JSON.stringify(products), 'utf8', () => { });
+    }
 }
 
 startTask();
