@@ -2,7 +2,7 @@ import {
     makeInitialRequest,
     makeNextPageRequests,
     populateVideoPreviewUrls,
-    populateAllProducts,
+    populateNextProducts,
     fetchDetails
 } from "./../utils";
 import { Product } from "./..//model/product";
@@ -155,12 +155,12 @@ test('Test populateVideoPreviewUrls with no urls data', async () => {
 })
 
 
-test('Test populateAllProducts adding new products data', async () => {
+test('Test populateNextProducts adding new products data', async () => {
     mocked(getProductsApi).mockReturnValueOnce(Promise.resolve({ data: validProductApiData }));
 
     let allProducts: Array<Product> = [{ name: "A", sku: "a", video_count: 1, video_urls: [] }];
 
-    populateAllProducts(allProducts, 1, 1).then(result => {
+    populateNextProducts(allProducts, 1, 1).then(result => {
         expect(allProducts).toBeTruthy();
         expect(allProducts).toHaveLength(3);
     }).catch(err => {
@@ -168,11 +168,11 @@ test('Test populateAllProducts adding new products data', async () => {
     })
 })
 
-test('Test populateAllProducts adding no new products data', async () => {
+test('Test populateNextProducts adding no new products data', async () => {
     mocked(getProductsApi).mockReturnValueOnce(Promise.resolve([]));
 
     let allProducts: Array<Product> = [{ name: "A", sku: "a", video_count: 1, video_urls: [] }];
-    await expect(populateAllProducts(allProducts, 1, 1))
+    await expect(populateNextProducts(allProducts, 1, 1))
         .rejects
         .toThrow(Error);
 })

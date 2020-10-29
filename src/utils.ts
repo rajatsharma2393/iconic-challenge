@@ -3,6 +3,7 @@ import { Product } from "./model/product";
 import { Response } from "./model/response";
 import { getProductsApi, getVideoPreviewUrl } from "./services/product";
 
+// First requests that fetch first set of products as well as total page count
 const makeInitialRequest = async (pageSize: number): Promise<Response> => {
     const products = await getProductsApi(1, pageSize);
     let resp = <Response>{};
@@ -24,6 +25,7 @@ const makeInitialRequest = async (pageSize: number): Promise<Response> => {
 
 }
 
+// Next set of requests that only fetches details of products
 const makeNextPageRequests = async (page: number, pageSize: number): Promise<Product[]> => {
     const products = await getProductsApi(page, pageSize);
     if (products && products.data && products.data._embedded && products.data._embedded.product) {
@@ -33,6 +35,7 @@ const makeNextPageRequests = async (page: number, pageSize: number): Promise<Pro
     }
 }
 
+// Function to populate the video preview url if any in passed product
 const populateVideoPreviewUrls = async (videoProduct: Product) => {
 
     let resp = await getVideoPreviewUrl(videoProduct.sku);
@@ -44,9 +47,8 @@ const populateVideoPreviewUrls = async (videoProduct: Product) => {
 
 }
 
-
-
-const populateAllProducts = async (allProducts: Array<Product>, pageNo: number, pageSize: number) => {
+// Function to populate next set of products into our all products DS
+const populateNextProducts = async (allProducts: Array<Product>, pageNo: number, pageSize: number) => {
     //Can use Promise.all here but if 1 api fails, other ones will not proceed
     // Also Gateway not handling concurrent requests in short span of time
 
@@ -58,8 +60,7 @@ const populateAllProducts = async (allProducts: Array<Product>, pageNo: number, 
     allProducts.push(...products);
 }
 
-
-
+// Main function to fetch all product details and add their corresponding video urls
 const fetchDetails = async (): Promise<Array<Product>> => {
     try {
         let pageSize: number = 100;
@@ -73,11 +74,11 @@ const fetchDetails = async (): Promise<Array<Product>> => {
 
         console.log("Processed page 1")
 
-        // Uncomment next for loop if still commented
+        // Process next set of pages and fetch products
         for (let i = 2; i <= response.pageCount; i++) {
             try {
                 //   Have to process this 1 by 1 otherwise gateway giving timeout error
-                await populateAllProducts(allProducts, i, pageSize);
+                await populateNextProducts(allProducts, i, pageSize);
                 console.log(`Processed page ${i}`)
             } catch (err) {
                 console.log(err);
@@ -91,7 +92,7 @@ const fetchDetails = async (): Promise<Array<Product>> => {
         // allProducts[0].sku = "LO569SA80GXF";
         // allProducts[0].video_count = 1;
 
-
+        // Filter out which products have video url and which dont
         // We dont need to process products that have zero video counts
         let noVideoProducts: Array<Product> = allProducts.filter(product => {
             return product.video_count == 0;
@@ -105,6 +106,8 @@ const fetchDetails = async (): Promise<Array<Product>> => {
             await populateVideoPreviewUrls(videoProducts[i]);
         }
         allProducts = Array<Product>();
+
+        // First add video products
         allProducts.push(...videoProducts);
         allProducts.push(...noVideoProducts);
         return allProducts;
@@ -120,6 +123,6 @@ export {
     makeInitialRequest,
     makeNextPageRequests,
     populateVideoPreviewUrls,
-    populateAllProducts,
+    populateNextProducts,
     fetchDetails
 }
